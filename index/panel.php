@@ -8,8 +8,10 @@ if (!isset($state->x->comment)) {
 Hook::set('_', function($_) use($user) {
     if (isset($_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment'])) {
         $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['icon'] = 'M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z';
-        // TODO: Add unread comment counter
-        $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['status'] = 0;
+        if (is_file($cache = LOT . D . 'cache' . D . 'comments.php')) {
+            [$comments_new, $comments] = array_replace([[], []], (array) require $cache);
+            $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['status'] = count($comments_new);
+        }
     }
     return $_;
 }, 0);
@@ -29,18 +31,29 @@ if (0 === strpos($_['path'] . '/', 'comment/') && !array_key_exists('type', $_GE
 
 if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
     Hook::set('_', function($_) {
-        $_['deep'] = 'comment' === $_['path']; // Enable recursive page list in root
-        $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['skip'] = true; // Hide create comment button in root
-        $_['lot']['desk']['lot']['form']['lot'][0]['title'] = ['Recent %s', ['Comments']];
+        $_['deep'] = $is_root = 'comment' === $_['path']; // Enable recursive page list in root
+        $_['sort'] = array_replace([-1, 'time'], (array) ($_GET['sort'] ?? [])); // Sort descending by `time` data by default
+        if ($is_root) {
+            $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['skip'] = true; // Hide create comment button in root
+            $_['lot']['desk']['lot']['form']['lot'][0]['title'] = ['Recent %s', ['Comments']];
+        }
         return $_;
     }, 9.9);
     Hook::set('_', function($_) {
+        if (!empty($_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['data'])) {
+            // Hide create data button
+            $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['data']['skip'] = true;
+        }
         if (
             !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['lot']) &&
             !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['type']) &&
             'pages' === $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['type']
         ) {
             extract($GLOBALS, EXTR_SKIP);
+            if (is_file($cache = LOT . D . 'cache' . D . 'comments.php')) {
+                [$comments_new, $comments] = array_replace([[], []], (array) require $cache);
+                $comments_new = array_flip($comments_new);
+            }
             foreach ($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['lot'] as $k => &$v) {
                 $p = new Comment($k);
                 $pp = new Comment($k);
@@ -56,6 +69,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                     }
                     $pp = new Comment($file);
                 }
+                $v['current'] = isset($comments_new[strtr($k, [LOT . D . 'comment' . D => "", D => '/'])]);
                 $v['description'] = $description;
                 $v['image'] = $avatar;
                 $v['link'] = $p->url;
@@ -247,6 +261,12 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
         ]);
         return $_;
     }, 10.1);
+    if ($_['file'] && is_file($cache = LOT . D . 'cache' . D . 'comments.php')) {
+        [$comments_new, $comments] = array_replace([[], []], (array) require $cache);
+        $comments_new = array_flip($comments_new);
+        unset($comments_new[substr($_['path'], strlen('comment/'))]); // Mark as read!
+        file_put_contents($cache, '<?' . 'php return' . z([array_keys($comments_new), $comments]) . ';');
+    }
 }
 
 return $_;
