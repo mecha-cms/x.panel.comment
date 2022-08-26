@@ -8,6 +8,8 @@ if (!isset($state->x->comment)) {
 Hook::set('_', function($_) use($user) {
     if (isset($_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment'])) {
         $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['icon'] = 'M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z';
+        // TODO: Add unread comment counter
+        $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['status'] = 0;
     }
     return $_;
 }, 0);
@@ -28,6 +30,8 @@ if (0 === strpos($_['path'] . '/', 'comment/') && !array_key_exists('type', $_GE
 if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
     Hook::set('_', function($_) {
         $_['deep'] = 'comment' === $_['path']; // Enable recursive page list in root
+        $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['skip'] = true; // Hide create comment button in root
+        $_['lot']['desk']['lot']['form']['lot'][0]['title'] = ['Recent %s', ['Comments']];
         return $_;
     }, 9.9);
     Hook::set('_', function($_) {
@@ -99,7 +103,31 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
     if (empty($page) || is_object($page) && !$page->exist) {
         $page = new Comment($_['file']);
     }
-    Hook::set('_', function($_) use($page) {
+    $parent = $_GET['parent'] ?? null;
+    // Make `parent` query to be unset by default
+    unset($_GET['parent'], $GLOBALS['_']['query']['parent'], $_['query']['parent']);
+    Hook::set('_', function($_) use($page, $parent) {
+        $parent = $parent ?? $page['parent'];
+        if ($file = $_['file']) {
+            $folder = dirname($file);
+            $comment_ref = $parent && is_file($p = $folder . D . $parent . '.page') ? new Comment($p) : new Comment;
+            $page_ref = strtr($folder, [
+                LOT . D . 'comment' . D => LOT . D . 'page' . D
+            ]);
+            $page_ref = new Page(exist([
+                $page_ref . '.archive',
+                $page_ref . '.page'
+            ], 1) ?: null);
+        } else if ($folder = $_['folder']) {
+            $comment_ref = $parent && is_file($p = $folder . D . $parent . '.page') ? new Comment($p) : new Comment;
+            $page_ref = strtr($folder, [
+                LOT . D . 'comment' . D => LOT . D . 'page' . D
+            ]);
+            $page_ref = new Page(exist([
+                $page_ref . '.archive',
+                $page_ref . '.page'
+            ], 1) ?: null);
+        }
         $_['lot'] = array_replace_recursive($_['lot'] ?? [], [
             'bar' => [
                 // `bar`
@@ -110,7 +138,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                             'set' => [
                                 'description' => ['New %s', 'Comment'],
                                 'icon' => 'M9,22A1,1 0 0,1 8,21V18H4A2,2 0 0,1 2,16V4C2,2.89 2.9,2 4,2H20A2,2 0 0,1 22,4V16A2,2 0 0,1 20,18H13.9L10.2,21.71C10,21.9 9.75,22 9.5,22H9M11,6V9H8V11H11V14H13V11H16V9H13V6H11Z',
-                                'skip' => true, // TODO: Skip only if parent folder not related to a page file
+                                'skip' => 'set' === $_['task'] || !$page_ref->exist, // Skip only if parent folder does not relate to any page
                                 'url' => [
                                     'part' => 0,
                                     'path' => dirname($_['path']),
@@ -136,6 +164,30 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                     'form' => [
                         // `form/post`
                         'lot' => [
+                            0 => 'set' === $_['task'] && $comment_ref->exist ? [
+                                // `section`
+                                'title' => ['Reply to %s', ['<a href="' . x\panel\to\link([
+                                    'path' => $_['path'] . '/' . $comment_ref->name . '.page',
+                                    'query' => [
+                                        'parent' => null
+                                    ],
+                                    'task' => 'get'
+                                ]) . '" rel="nofollow" target="_blank">' . $comment_ref->author . '</a>']],
+                                'content' => $comment_ref->content,
+                                'description' => (string) $comment_ref->time
+                            ] : ('set' === $_['task'] && $page_ref->exist ? [
+                                // `section`
+                                'title' => ['Comment to %s', ['<a href="' . x\panel\to\link([
+                                    'path' => 'page/' . substr($_['path'], strlen('comment/')) . '.' . $page_ref->x,
+                                    'query' => [
+                                        'parent' => null,
+                                        'type' => null
+                                    ],
+                                    'task' => 'get'
+                                ]) . '" rel="nofollow" target="_blank">' . $page_ref->title . '</a>']],
+                                'content' => $page_ref->content,
+                                'description' => (string) $page_ref->time
+                            ] : []),
                             1 => [
                                 // `section`
                                 'lot' => [
@@ -147,14 +199,16 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                                                     'fields' => [
                                                         // `fields`
                                                         'lot' => [
-                                                            'author' => [
+                                                            'author' => $comment_ref->exist ? [] : [
                                                                 'focus' => true,
                                                                 'stack' => 10,
                                                                 'type' => 'title',
                                                                 'width' => true
                                                             ],
+                                                            'content' => ['focus' => $comment_ref->exist],
                                                             'description' => ['skip' => true],
                                                             'name' => ['skip' => true],
+                                                            'tags' => ['skip' => true],
                                                             'title' => ['skip' => true]
                                                         ]
                                                     ]
@@ -172,7 +226,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                                                                 'pattern' => "^[1-9]\\d{3,}-(0\\d|1[0-2])-(0\\d|[1-2]\\d|3[0-1])-([0-1]\\d|2[0-4])(-([0-5]\\d|60)){2}$",
                                                                 'stack' => 10,
                                                                 'type' => 'name',
-                                                                'value' => ($parent = $_GET['parent'] ?? $page['parent']) ? (new Time($parent))->name : null
+                                                                'value' => $parent ? (new Time($parent))->name : null
                                                             ],
                                                             'time' => ['skip' => true]
                                                         ]
@@ -183,6 +237,9 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                                     ]
                                 ]
                             ]
+                        ],
+                        'values' => [
+                            'page' => ['name' => $page->name]
                         ]
                     ]
                 ]

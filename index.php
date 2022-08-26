@@ -7,4 +7,8 @@ if (!is_file($cache = LOT . D . 'cache' . D . 'comments.php')) {
     }
     krsort($comments);
     file_put_contents($cache, '<?' . 'php return ' . z(array_slice(array_values($comments), 0, $_['chunk'] ?? 20)) . ';');
+} else {
+    Hook::set('on.comment.set', function() use($cache) {
+        // TODO: Push data on every comment creation event
+    });
 }
