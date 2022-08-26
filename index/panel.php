@@ -35,6 +35,12 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
         $_['sort'] = array_replace([-1, 'time'], (array) ($_GET['sort'] ?? [])); // Sort descending by `time` data by default
         if ($is_root) {
             $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['skip'] = true; // Hide create comment button in root
+            $count = 0;
+            if (is_file($cache = LOT . D . 'cache' . D . 'comments.php')) {
+                [$comments_new, $comments] = array_replace([[], []], (array) require $cache);
+                $count = count($comments_new);
+            }
+            $_['lot']['desk']['lot']['form']['lot'][0]['description'] = ['There ' . (1 === $count ? 'is' : 'are') . ' ' . (0 === $count ? 'no' : '%d') . ' unread comment' . (1 === $count ? "" : 's') . '.', [$count]];
             $_['lot']['desk']['lot']['form']['lot'][0]['title'] = ['Recent %s', ['Comments']];
         }
         return $_;
