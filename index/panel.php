@@ -16,6 +16,36 @@ Hook::set('_', function($_) use($user) {
     return $_;
 }, 0);
 
+Hook::set('_', function($_) {
+    if (0 === strpos($_['type'] . '/', 'pages/page/')) {
+        if (
+            !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['lot']) &&
+            !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['type']) &&
+            'pages' === $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['type']
+        ) {
+            foreach ($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['lot'] as $k => &$v) {
+                $count = q(g($folder = strtr(dirname($k) . D . pathinfo($k, PATHINFO_FILENAME), [
+                    LOT . D . 'page' . D => LOT . D . 'comment' . D
+                ]), 'page'));
+                $v['tasks']['comments'] = [
+                    'description' => ['%d Comment' . (1 === $count ? "" : 's'), $count],
+                    'icon' => 'M12,23A1,1 0 0,1 11,22V19H7A2,2 0 0,1 5,17V7A2,2 0 0,1 7,5H21A2,2 0 0,1 23,7V17A2,2 0 0,1 21,19H16.9L13.2,22.71C13,22.89 12.76,23 12.5,23H12M13,17V20.08L16.08,17H21V7H7V17H13M3,15H1V3A2,2 0 0,1 3,1H19V3H3V15M9,9H19V11H9V9M9,13H17V15H9V13Z',
+                    'link' => $count > 0 ? [
+                        'part' => 1,
+                        'path' => 'comment/' . strtr($folder, [
+                            LOT . D . 'comment' . D => ""
+                        ]),
+                        'task' => 'get'
+                    ] : null,
+                    'stack' => 9.99
+                ];
+            }
+            unset($v);
+        }
+    }
+    return $_;
+}, 10.1);
+
 if (0 === strpos($_['path'] . '/', 'comment/') && !array_key_exists('type', $_GET) && !isset($_['type'])) {
     if (!empty($_['part']) && $_['folder']) {
         $_['type'] = 'pages/comment';
@@ -50,6 +80,29 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
             // Hide create data button
             $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['data']['skip'] = true;
         }
+        if (!empty($_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['parent'])) {
+            // Make directory level navigation point to the parent page
+            $folder = strtr($_['folder'], [
+                LOT . D . 'comment' . D => LOT . D . 'page' . D
+            ]);
+            if ($file = exist([
+                $folder . '.archive',
+                $folder . '.page'
+            ], 1)) {
+                $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['parent']['description'] = ['Open %s', 'Page'];
+                $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['parent']['icon'] = 'M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z';
+                $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['parent']['link'] = [
+                    'part' => 0,
+                    'path' => strtr($file, [
+                        LOT . D => "",
+                        D => '/'
+                    ]),
+                    'query' => x\panel\_query_set(),
+                    'task' => 'get'
+                ];
+                unset($_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['parent']['url']);
+            }
+        }
         if (
             !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['lot']) &&
             !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['type']) &&
@@ -75,7 +128,9 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                     }
                     $pp = new Comment($file);
                 }
-                $v['current'] = isset($comments_new[strtr($k, [LOT . D . 'comment' . D => "", D => '/'])]);
+                $v['current'] = isset($comments_new[strtr($k, [
+                    LOT . D . 'comment' . D => "", D => '/'])
+                ]);
                 $v['description'] = $description;
                 $v['image'] = $avatar;
                 $v['link'] = $p->url;
@@ -87,7 +142,10 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                     'icon' => 'M10,9V5L3,12L10,19V14.9C15,14.9 18.5,16.5 21,20C20,15 17,10 10,9Z',
                     'url' => $can_reply ? [
                         'part' => 0,
-                        'path' => strtr($p->page->url, [$url . '/' => 'comment/']),
+                        'path' => substr(strtr($p->page->path, [
+                            LOT . D . 'page' . D => 'comment/',
+                            D => '/'
+                        ]), 0, -(strlen($p->page->x) + 1)),
                         'query' => [
                             'parent' => $p->name,
                             'type' => 'page/comment'
