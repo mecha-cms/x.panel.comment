@@ -10,7 +10,9 @@ Hook::set('_', function($_) use($user) {
         $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['icon'] = 'M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z';
         if (is_file($cache = LOT . D . 'cache' . D . 'comments.php')) {
             [$comments_new, $comments] = array_replace([[], []], (array) require $cache);
-            $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['status'] = count($comments_new);
+            if (($count = count($comments_new)) > 0) {
+                $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['status'] = $count;
+            }
         }
     }
     return $_;
@@ -121,6 +123,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                 $avatar = $p->avatar(72) ?? null;
                 $description = To::description(x\panel\to\w($p->content ?? ""));
                 $title = x\panel\to\w((string) $p->author ?? "");
+                $x = $p->x;
                 while ($parent = $pp['parent']) {
                     ++$parent_count;
                     if (!is_file($file = dirname($pp->path) . D . $parent . '.page')) {
@@ -133,11 +136,11 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                 ]);
                 $v['description'] = $description;
                 $v['image'] = $avatar;
-                $v['link'] = $p->url;
+                $v['link'] = 'archive' === $x || 'draft' === $x ? false : $p->url;
                 $v['title'] = $title;
                 $v['url'] = false;
                 $v['tasks']['reply'] = [
-                    'active' => $can_reply = $parent_count < $parent_max,
+                    'active' => $can_reply = $parent_count < $parent_max && 'page' === $x,
                     'description' => $can_reply ? ['Reply to %s', $title] : null,
                     'icon' => 'M10,9V5L3,12L10,19V14.9C15,14.9 18.5,16.5 21,20C20,15 17,10 10,9Z',
                     'url' => $can_reply ? [
@@ -184,7 +187,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
     $parent = $_GET['parent'] ?? null;
     // Make `parent` query to be unset by default
     unset($_GET['parent'], $GLOBALS['_']['query']['parent'], $_['query']['parent']);
-    Hook::set('_', function($_) use($page, $parent) {
+    Hook::set('_', function($_) use($page, $parent, $state) {
         $parent = $parent ?? $page['parent'];
         if ($file = $_['file']) {
             $folder = dirname($file);
@@ -298,11 +301,17 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                                                 'lot' => [
                                                     'fields' => [
                                                         'lot' => [
+                                                            'email' => [
+                                                                'name' => 'page[email]',
+                                                                'stack' => 10,
+                                                                'type' => 'email',
+                                                                'value' => 'set' === $_['task'] ? ($state->email ?? null) : ($page['email'] ?? null)
+                                                            ],
                                                             'parent' => [
                                                                 'hint' => date('Y-m-d-H-i-s'),
                                                                 'name' => 'data[parent]',
                                                                 'pattern' => "^[1-9]\\d{3,}-(0\\d|1[0-2])-(0\\d|[1-2]\\d|3[0-1])-([0-1]\\d|2[0-4])(-([0-5]\\d|60)){2}$",
-                                                                'stack' => 10,
+                                                                'stack' => 20,
                                                                 'type' => 'name',
                                                                 'value' => $parent ? (new Time($parent))->name : null
                                                             ],
