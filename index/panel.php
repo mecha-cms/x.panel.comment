@@ -5,7 +5,7 @@ if (!isset($state->x->comment)) {
     return $_;
 }
 
-Hook::set('_', function($_) use($user) {
+Hook::set('_', function ($_) use ($user) {
     if (isset($_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment'])) {
         $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['icon'] = 'M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z';
         if (is_file($cache = LOT . D . 'cache' . D . 'comments.php')) {
@@ -18,7 +18,7 @@ Hook::set('_', function($_) use($user) {
     return $_;
 }, 0);
 
-Hook::set('_', function($_) {
+Hook::set('_', function ($_) {
     if (0 === strpos($_['type'] . '/', 'pages/page/')) {
         if (
             !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['lot']) &&
@@ -62,7 +62,7 @@ if (0 === strpos($_['path'] . '/', 'comment/') && !array_key_exists('type', $_GE
 }
 
 if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
-    Hook::set('_', function($_) {
+    Hook::set('_', function ($_) {
         $_['deep'] = $is_root = 'comment' === $_['path']; // Enable recursive page list in root
         $_['sort'] = array_replace([-1, 'time'], (array) ($_GET['sort'] ?? [])); // Sort descending by `time` data by default
         if ($is_root) {
@@ -77,7 +77,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
         }
         return $_;
     }, 9.9);
-    Hook::set('_', function($_) {
+    Hook::set('_', function ($_) {
         if (!empty($_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['data'])) {
             // Hide create data button
             $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['data']['skip'] = true;
@@ -187,7 +187,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
     $parent = $_GET['parent'] ?? null;
     // Make `parent` query to be unset by default
     unset($_GET['parent'], $GLOBALS['_']['query']['parent'], $_['query']['parent']);
-    Hook::set('_', function($_) use($page, $parent, $state) {
+    Hook::set('_', function ($_) use ($page, $parent, $state) {
         $parent = $parent ?? $page['parent'];
         if ($file = $_['file']) {
             $folder = dirname($file);

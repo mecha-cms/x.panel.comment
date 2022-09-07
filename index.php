@@ -2,7 +2,7 @@
 
 if (is_file($cache = LOT . D . 'cache' . D . 'comments.php')) {
     // Shift data on every comment create
-    Hook::set('on.comment.set', function($comment) use($cache) {
+    Hook::set('on.comment.set', function ($comment) use ($cache) {
         $comment = strtr($comment, [LOT . D . 'comment' . D => "", D => '/']);
         [$comments_new, $comments] = array_replace([[], []], (array) require $cache);
         $comments_new[] = $comment;
