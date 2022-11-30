@@ -55,6 +55,30 @@ Hook::set('_', function ($_) use ($user) {
             ];
         }
     }
+    if ($is_in_comment_guard && isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content'])) {
+        // This line removes the “Delete” button to prevent non-savvy user(s) from deleting the file
+        if (isset($_['lot']['desk']['lot']['form']['lot'][2]['lot']['fields']['lot'][0]['lot']['tasks']['lot']['let'])) {
+            $_['lot']['desk']['lot']['form']['lot'][2]['lot']['fields']['lot'][0]['lot']['tasks']['lot']['let']['skip'] = true;
+        }
+        // This line sets the `name` field as hidden field so that non-savvy user(s) will not change the file name
+        if (isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['name'])) {
+            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['name']['type'] = 'hidden';
+        }
+        // These lines add an explanation below the file content editor on how to edit the file
+        $k = $_['file'] ?? uniqid();
+        if ($_['path'] === 'x/comment.guard/content.txt') {
+            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['description'] = 'Enter a list of words you want to block in comments. Each separated by a line break.';
+        }
+        if ($_['path'] === 'x/comment.guard/email.txt') {
+            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['description'] = 'Block comments from their email address. Each separated by a line break.';
+        }
+        if ($_['path'] === 'x/comment.guard/ip.txt') {
+            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['description'] = 'Block comments from their IP address. Each separated by a line break.';
+        }
+        if ($_['path'] === 'x/comment.guard/link.txt') {
+            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['description'] = 'Block comments from their link address. Each separated by a line break.';
+        }
+    }
     return $_;
 }, 0);
 
