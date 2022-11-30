@@ -15,6 +15,46 @@ Hook::set('_', function ($_) use ($user) {
             }
         }
     }
+    $is_in_comment = 0 === strpos($_['path'] . '/', 'comment/');
+    $is_in_comment_guard = 0 === strpos($_['path'] . '/', 'x/comment.guard/');
+    if (isset($_['lot']['bar']['lot'][1]['lot']) && ($is_in_comment || $is_in_comment_guard)) {
+        extract($GLOBALS, EXTR_SKIP);
+        if (isset($state->x->{'comment.guard'})) {
+            $lot = [];
+            $i = 0;
+            foreach ([
+                'content' => ['Content', 'Prevent users from publishing comments based on certain words in their comment content.'],
+                'email' => ['Email', 'Prevent users from publishing comments based on their email address.'],
+                'ip' => ['IP', 'Prevent users from publishing comments based on their IP address.'],
+                'link' => ['Link', 'Prevent users from publishing comments based on their link address.']
+            ] as $k => $v) {
+                $lot[$k] = [
+                    'current' => 'x/comment.guard/' . $k . '.txt' === $_['path'],
+                    'description' => $v[1],
+                    'icon' => 'M19,20V22.97H17V20H14V18H17V15H19V18H22V20H19M21,11C21,11.9 20.9,12.78 20.71,13.65C20.13,13.35 19.5,13.15 18.81,13.05C18.93,12.45 19,11.83 19,11.22V6.3L12,3.18L5,6.3V11.22C5,15.54 8.25,20 12,21L12.31,20.91C12.5,21.53 12.83,22.11 13.22,22.62L12,23C6.84,21.74 3,16.55 3,11V5L12,1L21,5V11Z',
+                    ($is_in_comment_guard ? 'url' : 'link') => [
+                        'part' => 0,
+                        'path' => 'x/comment.guard/' . $k . '.txt',
+                        'task' => 'get'
+                    ],
+                    'stack' => 10 + $i,
+                    'title' => $v[0],
+                ];
+                $i += .1;
+            }
+            $_['lot']['bar']['lot'][1]['lot']['guard'] = [
+                'current' => $is_in_comment_guard,
+                'icon' => 'M12,12H19C18.47,16.11 15.72,19.78 12,20.92V12H5V6.3L12,3.19M12,1L3,5V11C3,16.55 6.84,21.73 12,23C17.16,21.73 21,16.55 21,11V5L12,1Z',
+                'lot' => $lot,
+                'stack' => 0,
+                'url' => [
+                    'part' => 1,
+                    'path' => 'x/comment.guard',
+                    'task' => 'get'
+                ]
+            ];
+        }
+    }
     return $_;
 }, 0);
 
