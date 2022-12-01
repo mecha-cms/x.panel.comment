@@ -15,6 +15,28 @@ Hook::set('_', function ($_) use ($user) {
             }
         }
     }
+    $names = [
+        'content' => [
+            'Content',
+            'Prevent users from publishing comments based on certain words in their comment content.',
+            'Enter a list of words you want to block in comments, each separated by a line break.'
+        ],
+        'email' => [
+            'Email',
+            'Prevent users from publishing comments based on their email address.',
+            'Block comments from their email address, each separated by a line break.'
+        ],
+        'ip' => [
+            'IP',
+            'Prevent users from publishing comments based on their IP address.',
+            'Block comments from their IP address, each separated by a line break.'
+        ],
+        'link' => [
+            'Link',
+            'Prevent users from publishing comments based on their link address.',
+            'Block comments from their link address, each separated by a line break.'
+        ]
+    ];
     $is_in_comment = 0 === strpos($_['path'] . '/', 'comment/');
     $is_in_comment_guard = 0 === strpos($_['path'] . '/', 'x/comment.guard/');
     if (isset($_['lot']['bar']['lot'][1]['lot']) && ($is_in_comment || $is_in_comment_guard)) {
@@ -22,12 +44,7 @@ Hook::set('_', function ($_) use ($user) {
         if (isset($state->x->{'comment.guard'})) {
             $lot = [];
             $i = 0;
-            foreach ([
-                'content' => ['Content', 'Prevent users from publishing comments based on certain words in their comment content.'],
-                'email' => ['Email', 'Prevent users from publishing comments based on their email address.'],
-                'ip' => ['IP', 'Prevent users from publishing comments based on their IP address.'],
-                'link' => ['Link', 'Prevent users from publishing comments based on their link address.']
-            ] as $k => $v) {
+            foreach ($names as $k => $v) {
                 $lot[$k] = [
                     'current' => 'x/comment.guard/' . $k . '.txt' === $_['path'],
                     'description' => $v[1],
@@ -35,13 +52,15 @@ Hook::set('_', function ($_) use ($user) {
                     ($is_in_comment_guard ? 'url' : 'link') => [
                         'part' => 0,
                         'path' => 'x/comment.guard/' . $k . '.txt',
+                        'query' => null,
                         'task' => 'get'
                     ],
                     'stack' => 10 + $i,
                     'title' => $v[0],
                 ];
-                $i += .1;
+                $i += 10;
             }
+            // Add “Guard” menu
             $_['lot']['bar']['lot'][1]['lot']['guard'] = [
                 'current' => $is_in_comment_guard,
                 'icon' => 'M12,12H19C18.47,16.11 15.72,19.78 12,20.92V12H5V6.3L12,3.19M12,1L3,5V11C3,16.55 6.84,21.73 12,23C17.16,21.73 21,16.55 21,11V5L12,1Z',
@@ -50,40 +69,52 @@ Hook::set('_', function ($_) use ($user) {
                 'url' => [
                     'part' => 1,
                     'path' => 'x/comment.guard',
+                    'query' => null,
                     'task' => 'get'
                 ]
             ];
         }
     }
     if ($is_in_comment_guard && isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content'])) {
-        // This line removes the “Delete” button to prevent non-savvy user(s) from deleting the file
-        if (isset($_['lot']['desk']['lot']['form']['lot'][2]['lot']['fields']['lot'][0]['lot']['tasks']['lot']['let'])) {
-            $_['lot']['desk']['lot']['form']['lot'][2]['lot']['fields']['lot'][0]['lot']['tasks']['lot']['let']['skip'] = true;
-        }
-        // This line sets the `name` field as hidden field so that non-savvy user(s) will not change the file name
-        if (isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['name'])) {
-            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['name']['type'] = 'hidden';
-        }
-        // These lines add an explanation below the file content editor on how to edit the file
-        $k = $_['file'] ?? uniqid();
-        if ($_['path'] === 'x/comment.guard/content.txt') {
-            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['description'] = 'Enter a list of words you want to block in comments. Each separated by a line break.';
-        }
-        if ($_['path'] === 'x/comment.guard/email.txt') {
-            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['description'] = 'Block comments from their email address. Each separated by a line break.';
-        }
-        if ($_['path'] === 'x/comment.guard/ip.txt') {
-            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['description'] = 'Block comments from their IP address. Each separated by a line break.';
-        }
-        if ($_['path'] === 'x/comment.guard/link.txt') {
-            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['description'] = 'Block comments from their link address. Each separated by a line break.';
+        if ('get' === $_['task'] && isset($names[$n = basename($_['file'] ?? "", '.txt')])) {
+            $name = $names[$n];
+            // This line removes the “Delete” button to prevent non-savvy user(s) from deleting the file
+            if (isset($_['lot']['desk']['lot']['form']['lot'][2]['lot']['fields']['lot'][0]['lot']['tasks']['lot']['let'])) {
+                $_['lot']['desk']['lot']['form']['lot'][2]['lot']['fields']['lot'][0]['lot']['tasks']['lot']['let']['skip'] = true;
+            }
+            // This line sets the `name` field as hidden field so that non-savvy user(s) cannot change the file name
+            if (isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['name'])) {
+                $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['name']['type'] = 'hidden';
+            }
+            // These lines add an explanation below the file content editor on how to edit the file
+            if ($_['path'] === 'x/comment.guard/' . $n . '.txt') {
+                $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['description'] = i($name[1]) . ' ' . i($name[2]);
+                $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['focus'] = true;
+            }
         }
     }
     return $_;
 }, 0);
 
 Hook::set('_', function ($_) {
-    if (0 === strpos($_['type'] . '/', 'pages/page/')) {
+    if (0 === strpos($_['type'] . '/', 'files/x/')) {
+        if (
+            !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['files']['lot']) &&
+            !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['files']['type']) &&
+            'files' === $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['files']['type']
+        ) {
+            // Hide `content.txt`, `email.txt`, `ip.txt`, and `link.txt` from the list as they are already accessible through the “Guard” menu
+            foreach (['content', 'email', 'ip', 'link'] as $v) {
+                if (isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['files']['lot'][$v = $_['folder'] . D . $v . '.txt'])) {
+                    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['files']['lot'][$v]['skip'] = true;
+                }
+            }
+            // Update total file(s) count
+            if (isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count']) && is_int($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'])) {
+                $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'] -= 4;
+            }
+        }
+    } else if (0 === strpos($_['type'] . '/', 'pages/page/')) {
         if (
             !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['lot']) &&
             !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['type']) &&
