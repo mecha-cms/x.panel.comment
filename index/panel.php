@@ -16,6 +16,11 @@ Hook::set('_', function ($_) use ($user) {
         }
     }
     $names = [
+        'author' => [
+            'Author',
+            'Prevent users from publishing comments based on certain words in their comment author name.',
+            'Block comments from their author name, each separated by a line break.'
+        ],
         'content' => [
             'Content',
             'Prevent users from publishing comments based on certain words in their comment content.',
@@ -26,7 +31,7 @@ Hook::set('_', function ($_) use ($user) {
             'Prevent users from publishing comments based on their email address.',
             'Block comments from their email address, each separated by a line break.'
         ],
-        'ip' => [
+        'i-p' => [
             'IP',
             'Prevent users from publishing comments based on their IP address.',
             'Block comments from their IP address, each separated by a line break.'
@@ -103,15 +108,15 @@ Hook::set('_', function ($_) {
             !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['files']['type']) &&
             'files' === $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['files']['type']
         ) {
-            // Hide `content.txt`, `email.txt`, `ip.txt`, and `link.txt` from the list as they are already accessible through the “Guard” menu
-            foreach (['content', 'email', 'ip', 'link'] as $v) {
+            // Hide `author.txt`, `content.txt`, `email.txt`, `i-p.txt`, and `link.txt` from the list as they are already accessible through the “Guard” menu
+            foreach (['author', 'content', 'email', 'i-p', 'link'] as $v) {
                 if (isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['files']['lot'][$v = $_['folder'] . D . $v . '.txt'])) {
                     $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['files']['lot'][$v]['skip'] = true;
                 }
             }
             // Update total file(s) count
             if (isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count']) && is_int($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'])) {
-                $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'] -= 4;
+                $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'] -= 5;
             }
         }
     } else if (0 === strpos($_['type'] . '/', 'pages/page/')) {
