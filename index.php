@@ -19,5 +19,5 @@ if (is_file($cache = LOT . D . 'cache' . D . 'comments.php')) {
     if (!is_dir($folder = dirname($cache))) {
         mkdir($folder, 0775, true);
     }
-    file_put_contents($cache, '<?' . 'php return' . z([$comments, $comments]) . ';');
+    file_put_contents($cache, '<?' . 'php return' . z([[], $comments]) . ';');
 }
