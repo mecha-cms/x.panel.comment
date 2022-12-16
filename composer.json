@@ -1,5 +1,5 @@
 {
-  "description": "Panel feature to conveniently manage comment files.",
+  "description": "Control panel feature to conveniently manage comment files.",
   "license": "GPL-3.0-or-later",
   "name": "mecha-cms/x.panel.comment",
   "require": {
