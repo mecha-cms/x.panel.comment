@@ -220,7 +220,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                 $pp = new Comment($k);
                 $parent_count = 0;
                 $parent_max = $state->x->comment->page->deep ?? 0;
-                $avatar = $p->avatar(72) ?? null;
+                $avatar = $p->avatar(72, 72, 100) ?? null;
                 $description = To::description(x\panel\to\w($p->content ?? ""));
                 $title = x\panel\to\w((string) $p->author ?? "");
                 $x = $p->x;
