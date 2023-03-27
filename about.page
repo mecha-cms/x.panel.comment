@@ -14,10 +14,6 @@ images:
 author: Taufik Nurrohman
 type: Markdown
 version: 1.0.0
-
-use:
-  '.\lot\x\comment': 1
-  '.\lot\x\panel': 1
 ...
 
 This extension adds features to the control panel to make it easier to manage comment files.
