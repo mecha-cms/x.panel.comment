@@ -5,6 +5,13 @@ if (!isset($state->x->comment)) {
     return $_;
 }
 
+if ('POST' === $_SERVER['REQUEST_METHOD']) {
+    if (0 === strpos(($_POST['type'] ?? P) . '/', 'page/page/') && !isset($_POST['page']['state']['x']['comment'])) {
+        // Set value to default if user does not check the toggle
+        $_POST['page']['state']['x']['comment'] = (int) ($state->x->comment->status ?? 1);
+    }
+}
+
 Hook::set('_', function ($_) use ($user) {
     if (isset($_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment'])) {
         $_['lot']['bar']['lot'][0]['lot']['folder']['lot']['comment']['icon'] = 'M17,12V3A1,1 0 0,0 16,2H3A1,1 0 0,0 2,3V17L6,13H16A1,1 0 0,0 17,12M21,6H19V15H6V17A1,1 0 0,0 7,18H18L22,22V7A1,1 0 0,0 21,6Z';
@@ -42,10 +49,10 @@ Hook::set('_', function ($_) use ($user) {
             'Block comments from their link address, each separated by a line break.'
         ]
     ];
+    extract($GLOBALS, EXTR_SKIP);
     $is_in_comment = 0 === strpos($_['path'] . '/', 'comment/');
     $is_in_comment_guard = 0 === strpos($_['path'] . '/', 'x/comment.guard/');
     if (isset($_['lot']['bar']['lot'][1]['lot']) && ($is_in_comment || $is_in_comment_guard)) {
-        extract($GLOBALS, EXTR_SKIP);
         if (isset($state->x->{'comment.guard'})) {
             $lot = [];
             $i = 0;
@@ -97,6 +104,20 @@ Hook::set('_', function ($_) use ($user) {
                 $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content']['focus'] = true;
             }
         }
+    }
+    if (0 === strpos($_['type'] . '/', 'page/page/') && !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['extension'])) {
+        $page = new Page($_['file'] ?: null);
+        $comments = $page->comments ? ($page->comments->count ?? 0) : 0;
+        $status = (int) ($state->x->comment->status ?? 1); // The default comment status
+        if (!isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['extension']['values']['comment'])) {
+            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['extension']['values']['comment'] = (int) ($page->state['x']['comment'] ?? $status);
+        }
+        // Set option to close comment(s) if it is open by default or open comment(s) if it is close by default
+        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['extension']['lot']['comment'] = [
+            'description' => 0 === $comments ? ['No %s yet.', ['comments']] : ['%d comment' . (1 === $comments ? "" : 's') . ' already published on this page.', [$comments]],
+            'title' => [(0 === $comments ? (1 === $status ? 'Disable' : 'Enable') : (1 === $status ? 'Close' : 'Open')) . ' %s', ['comments']],
+            'value' => 1 === $status ? (0 === $comments ? 0 : 2) : 1
+        ];
     }
     return $_;
 }, 0);
@@ -282,7 +303,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
     }, 10.1);
 } else if (0 === strpos($_['type'] . '/', 'page/comment/')) {
     if (empty($page) || is_object($page) && !$page->exist) {
-        $page = new Comment($_['file']);
+        $page = new Comment($_['file'] ?: null);
     }
     $parent = $_GET['parent'] ?? null;
     // Make `parent` query to be unset by default
