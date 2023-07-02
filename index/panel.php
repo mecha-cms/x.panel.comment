@@ -105,15 +105,15 @@ Hook::set('_', function ($_) use ($user) {
             }
         }
     }
-    if (0 === strpos($_['type'] . '/', 'page/page/') && !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['extension'])) {
+    if (0 === strpos($_['type'] . '/', 'page/page/') && !empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['state.x'])) {
         $page = new Page($_['file'] ?: null);
         $comments = $page->comments ? ($page->comments->count ?? 0) : 0;
         $status = (int) ($state->x->comment->status ?? 1); // The default comment status
-        if (!isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['extension']['values']['comment'])) {
-            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['extension']['values']['comment'] = (int) ($page->state['x']['comment'] ?? $status);
+        if (!isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['state.x']['values']['comment'])) {
+            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['state.x']['values']['comment'] = (int) ($page->state['x']['comment'] ?? $status);
         }
         // Set option to close comment(s) if it is open by default or open comment(s) if it is close by default
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['extension']['lot']['comment'] = [
+        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['state']['lot']['fields']['lot']['state.x']['lot']['comment'] = [
             'description' => 0 === $comments ? ['No %s yet.', ['comments']] : ['%d comment' . (1 === $comments ? "" : 's') . ' already published on this page.', [$comments]],
             'title' => [(0 === $comments ? (1 === $status ? 'Disable' : 'Enable') : (1 === $status ? 'Close' : 'Open')) . ' %s', ['comments']],
             'value' => 1 === $status ? (0 === $comments ? 0 : 2) : 1
