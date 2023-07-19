@@ -39,99 +39,96 @@ if (0 === strpos($_['path'] . '/', 'comment/') && !array_key_exists('type', $_GE
 }
 
 if (0 === strpos($_['type'] . '/', 'page/comment/')) {
-    Hook::set('_', function ($_) use ($page, $state) { // Late override
-        if (!$page->exist) {
-            $page = new Page($_['file']);
-        }
-        $parent = $_['query']['parent'] ?? null;
-        // Make `parent` query to be unset by default
-        unset($_GET['parent'], $GLOBALS['_']['query']['parent'], $_['query']['parent']);
-        if ($file = $_['file']) {
-            $folder = dirname($file);
-            $comment_ref = $parent && is_file($p = $folder . D . $parent . '.page') ? new Comment($p) : new Comment;
-            $page_ref = strtr($folder, [
-                LOT . D . 'comment' . D => LOT . D . 'page' . D
-            ]);
-            $page_ref = new Page(exist([
-                $page_ref . '.archive',
-                $page_ref . '.page'
-            ], 1) ?: null);
-        } else if ($folder = $_['folder']) {
-            $comment_ref = $parent && is_file($p = $folder . D . $parent . '.page') ? new Comment($p) : new Comment;
-            $page_ref = strtr($folder, [
-                LOT . D . 'comment' . D => LOT . D . 'page' . D
-            ]);
-            $page_ref = new Page(exist([
-                $page_ref . '.archive',
-                $page_ref . '.page'
-            ], 1) ?: null);
-        }
-        $_['lot']['bar']['lot'][0]['lot']['set']['description'][1] = 'Comment';
-        $_['lot']['bar']['lot'][0]['lot']['set']['icon'] = 'M9,22A1,1 0 0,1 8,21V18H4A2,2 0 0,1 2,16V4C2,2.89 2.9,2 4,2H20A2,2 0 0,1 22,4V16A2,2 0 0,1 20,18H13.9L10.2,21.71C10,21.9 9.75,22 9.5,22H9M11,6V9H8V11H11V14H13V11H16V9H13V6H11Z';
-        $_['lot']['bar']['lot'][0]['lot']['set']['skip'] = 'set' === $_['task'] || !$page_ref->exist; // Skip only if parent folder does not relate to any page
-        $_['lot']['bar']['lot'][0]['lot']['set']['url'] = [
-            'part' => 0,
-            'path' => dirname($_['path']),
-            'query' => x\panel\_query_set(['type' => 'page/comment']),
-            'task' => 'set'
-        ];
-        $_['lot']['desk']['lot']['form']['lot'][0] = 'set' === $_['task'] && $comment_ref->exist ? [
-            'title' => ['Reply to %s', ['<a href="' . x\panel\to\link([
-                'path' => $_['path'] . '/' . $comment_ref->name . '.page',
-                'query' => ['parent' => null],
-                'task' => 'get'
-            ]) . '" rel="nofollow" target="_blank">' . $comment_ref->author . '</a>']],
-            'content' => '<div class="p">' . $comment_ref->content . '</div>',
-            'description' => (string) $comment_ref->time
-        ] : ('set' === $_['task'] && $page_ref->exist ? [
-            'title' => ['Comment to %s', ['<a href="' . x\panel\to\link([
-                'path' => 'page/' . substr($_['path'], strlen('comment/')) . '.' . $page_ref->x,
-                'query' => [
-                    'parent' => null,
-                    'type' => null
-                ],
-                'task' => 'get'
-            ]) . '" rel="nofollow" target="_blank">' . $page_ref->title . '</a>']],
-            'content' => '<div class="p">' . $page_ref->content . '</div>',
-            'description' => (string) $page_ref->time
-        ] : []);
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['author'] = [
-            'focus' => true,
-            'stack' => 10,
-            'type' => $comment_ref->exist ? 'hidden' : 'title',
-            'value' => $_['author'] ?? null,
-            'width' => true
-        ];
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['content']['focus'] = $comment_ref->exist;
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['description']['skip'] = true;
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['name']['skip'] = true;
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['tags']['skip'] = true;
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['title']['skip'] = true;
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['value'] = 'comment';
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['data']['lot']['fields']['lot']['email'] = [
-            'name' => 'page[email]',
-            'stack' => 10,
-            'type' => 'email',
-            'value' => 'set' === $_['task'] ? ($state->email ?? null) : ($page['email'] ?? null)
-        ];
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['data']['lot']['fields']['lot']['parent'] = [
-            'hint' => date('Y-m-d-H-i-s'),
-            'name' => 'data[parent]',
-            'pattern' => "[1-9]\\d{3,}-(0\\d|1[0-2])-(0\\d|[1-2]\\d|3[0-1])-([0-1]\\d|2[0-4])(-([0-5]\\d|60)){2}",
-            'stack' => 20,
-            'type' => 'name',
-            'value' => $parent ? (new Time($parent))->name : null
-        ];
-        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['data']['lot']['fields']['lot']['time']['skip'] = true;
-        $_['lot']['desk']['lot']['form']['values']['page']['name'] = $page->name;
-        if ($file && is_file($f = LOT . D . 'cache' . D . 'comments.php')) {
-            [$comments_new, $comments] = array_replace([[], []], (array) require $f);
-            $comments_new = array_flip($comments_new);
-            unset($comments_new[substr($_['path'], strlen('comment/'))]); // Mark as read!
-            file_put_contents($f, '<?' . 'php return' . z([array_keys($comments_new), $comments]) . ';');
-        }
-        return $_;
-    }, 0);
+    if (!$page->exist) {
+        $page = new Page($_['file']);
+    }
+    $parent = $_['query']['parent'] ?? null;
+    // Make `parent` query to be unset by default
+    unset($_GET['parent'], $GLOBALS['_']['query']['parent'], $_['query']['parent']);
+    if ($file = $_['file']) {
+        $folder = dirname($file);
+        $comment_ref = $parent && is_file($p = $folder . D . $parent . '.page') ? new Comment($p) : new Comment;
+        $page_ref = strtr($folder, [
+            LOT . D . 'comment' . D => LOT . D . 'page' . D
+        ]);
+        $page_ref = new Page(exist([
+            $page_ref . '.archive',
+            $page_ref . '.page'
+        ], 1) ?: null);
+    } else if ($folder = $_['folder']) {
+        $comment_ref = $parent && is_file($p = $folder . D . $parent . '.page') ? new Comment($p) : new Comment;
+        $page_ref = strtr($folder, [
+            LOT . D . 'comment' . D => LOT . D . 'page' . D
+        ]);
+        $page_ref = new Page(exist([
+            $page_ref . '.archive',
+            $page_ref . '.page'
+        ], 1) ?: null);
+    }
+    $_['lot']['bar']['lot'][0]['lot']['set']['description'][1] = 'Comment';
+    $_['lot']['bar']['lot'][0]['lot']['set']['icon'] = 'M9,22A1,1 0 0,1 8,21V18H4A2,2 0 0,1 2,16V4C2,2.89 2.9,2 4,2H20A2,2 0 0,1 22,4V16A2,2 0 0,1 20,18H13.9L10.2,21.71C10,21.9 9.75,22 9.5,22H9M11,6V9H8V11H11V14H13V11H16V9H13V6H11Z';
+    $_['lot']['bar']['lot'][0]['lot']['set']['skip'] = 'set' === $_['task'] || !$page_ref->exist; // Skip only if parent folder does not relate to any page
+    $_['lot']['bar']['lot'][0]['lot']['set']['url'] = [
+        'part' => 0,
+        'path' => dirname($_['path']),
+        'query' => x\panel\_query_set(['type' => 'page/comment']),
+        'task' => 'set'
+    ];
+    $_['lot']['desk']['lot']['form']['lot'][0] = 'set' === $_['task'] && $comment_ref->exist ? [
+        'title' => ['Reply to %s', ['<a href="' . x\panel\to\link([
+            'path' => $_['path'] . '/' . $comment_ref->name . '.page',
+            'query' => ['parent' => null],
+            'task' => 'get'
+        ]) . '" rel="nofollow" target="_blank">' . $comment_ref->author . '</a>']],
+        'content' => '<div class="p">' . $comment_ref->content . '</div>',
+        'description' => (string) $comment_ref->time
+    ] : ('set' === $_['task'] && $page_ref->exist ? [
+        'title' => ['Comment to %s', ['<a href="' . x\panel\to\link([
+            'path' => 'page/' . substr($_['path'], strlen('comment/')) . '.' . $page_ref->x,
+            'query' => [
+                'parent' => null,
+                'type' => null
+            ],
+            'task' => 'get'
+        ]) . '" rel="nofollow" target="_blank">' . $page_ref->title . '</a>']],
+        'content' => '<div class="p">' . $page_ref->content . '</div>',
+        'description' => (string) $page_ref->time
+    ] : []);
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['author'] = [
+        'focus' => true,
+        'stack' => 10,
+        'type' => $comment_ref->exist ? 'hidden' : 'title',
+        'value' => $_['author'] ?? null,
+        'width' => true
+    ];
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['content']['focus'] = $comment_ref->exist;
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['description']['skip'] = true;
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['name']['skip'] = true;
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['tags']['skip'] = true;
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['lot']['fields']['lot']['title']['skip'] = true;
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['page']['value'] = 'comment';
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['data']['lot']['fields']['lot']['email'] = [
+        'name' => 'page[email]',
+        'stack' => 10,
+        'type' => 'email',
+        'value' => 'set' === $_['task'] ? ($state->email ?? null) : ($page['email'] ?? null)
+    ];
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['data']['lot']['fields']['lot']['parent'] = [
+        'hint' => date('Y-m-d-H-i-s'),
+        'name' => 'data[parent]',
+        'pattern' => "[1-9]\\d{3,}-(0\\d|1[0-2])-(0\\d|[1-2]\\d|3[0-1])-([0-1]\\d|2[0-4])(-([0-5]\\d|60)){2}",
+        'stack' => 20,
+        'type' => 'name',
+        'value' => $parent ? (new Time($parent))->name : null
+    ];
+    $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['data']['lot']['fields']['lot']['time']['skip'] = true;
+    $_['lot']['desk']['lot']['form']['values']['page']['name'] = $page->name;
+    if ($file && is_file($f = LOT . D . 'cache' . D . 'comments.php')) {
+        [$comments_new, $comments] = array_replace([[], []], (array) require $f);
+        $comments_new = array_flip($comments_new);
+        unset($comments_new[substr($_['path'], strlen('comment/'))]); // Mark as read!
+        file_put_contents($f, '<?' . 'php return' . z([array_keys($comments_new), $comments]) . ';');
+    }
     return $_;
 }
 
@@ -168,14 +165,14 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
         }
     }
     $_['sort'] = array_replace([-1, 'time'], (array) ($_['query']['sort'] ?? [])); // Sort descending by `time` data by default
+    $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['page']['description'][1] = 'Comment';
+    $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['page']['title'] = 'Comment';
+    $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['page']['url'] = [
+        'part' => 0,
+        'query' => x\panel\_query_set(['type' => 'page/comment']),
+        'task' => 'set'
+    ];
     Hook::set('_', function ($_) use ($comments_new, $state) { // Late override
-        $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['page']['description'][1] = 'Comment';
-        $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['page']['title'] = 'Comment';
-        $_['lot']['desk']['lot']['form']['lot'][0]['lot']['tasks']['lot']['page']['url'] = [
-            'part' => 0,
-            'query' => x\panel\_query_set(['type' => 'page/comment']),
-            'task' => 'set'
-        ];
         if (empty($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['lot'])) {
             return $_;
         }
@@ -185,7 +182,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
         if (0 !== strpos($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['type'] . '/', 'pages/')) {
             return $_;
         }
-        $comments_new = array_flip($comments_new);
+        $comments_k = array_flip($comments_new);
         foreach ($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['pages']['lot']['pages']['lot'] as $k => &$v) {
             $comment = new Comment($k);
             $parent_comment = $comment;
@@ -202,7 +199,7 @@ if (0 === strpos($_['type'] . '/', 'pages/comment/')) {
                 }
                 $parent_comment = new Comment($parent_file);
             }
-            $v['current'] = isset($comments_new[strtr($k, [
+            $v['current'] = isset($comments_k[strtr($k, [
                 LOT . D . 'comment' . D => "",
                 D => '/'
             ])]);
@@ -304,12 +301,17 @@ if ($has_comment_guard && ($is_in_comment || $is_in_comment_guard) && isset($_['
     ];
 }
 
-if ($has_comment_guard && $is_in_comment_guard && 'get' === $_['task'] && isset($names[$n = basename($_['file'] ?? "", '.txt')])) {
-    Hook::set('_', function ($_) use ($n, $names) { // Late override
+if ($has_comment_guard && $is_in_comment_guard && 'get' === $_['task']) {
+    Hook::set('_', function ($_) use ($names) { // Late override
+        if (0 !== strpos($_['type'] . '/', 'file/')) {
+            return $_;
+        }
         if (!isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['file']['lot']['fields']['lot']['content'])) {
             return $_;
         }
-        $name = $names[$n];
+        if (!$name = $names[$n = basename($_['file'] ?? "", '.txt')] ?? "") {
+            return $_;
+        }
         // This line removes the “Delete” button to prevent non-savvy user(s) from deleting the file
         if (isset($_['lot']['desk']['lot']['form']['lot'][2]['lot']['fields']['lot'][0]['lot']['tasks']['lot']['let'])) {
             $_['lot']['desk']['lot']['form']['lot'][2]['lot']['fields']['lot'][0]['lot']['tasks']['lot']['let']['skip'] = true;
@@ -345,9 +347,13 @@ Hook::set('_', function ($_) use ($has_comment_guard, $page) { // Late override
             }
         }
         // Update total file(s) count
-        if (isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count']) && is_int($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'])) {
-            $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'] -= 5;
+        if (!isset($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'])) {
+            return $_;
         }
+        if (!is_int($_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'])) {
+            return $_;
+        }
+        $_['lot']['desk']['lot']['form']['lot'][1]['lot']['tabs']['lot']['files']['lot']['pager']['count'] -= 5;
         return $_;
     }
     if (0 === strpos($_['type'] . '/', 'pages/page/')) {
